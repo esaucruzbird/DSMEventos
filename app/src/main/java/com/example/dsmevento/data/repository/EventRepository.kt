@@ -51,10 +51,17 @@ class EventRepository {
         onChange: (List<Review>) -> Unit
     ): ListenerRegistration = dataSource.listenReviews(eventId, onChange)
 
-    fun addReview(
+    fun addOrUpdateReview(
         eventId: String,
         review: Review,
         onSuccess: () -> Unit,
         onError: (String) -> Unit
-    ) = dataSource.addReview(eventId, review, onSuccess, onError)
+    ) = dataSource.addOrUpdateReview(eventId, review, onSuccess, onError)
+
+    fun deleteReview(
+        eventId: String,
+        userId: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) = dataSource.deleteReview(eventId, userId, onSuccess, onError)
 }

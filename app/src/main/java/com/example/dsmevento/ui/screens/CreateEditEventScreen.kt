@@ -1,8 +1,26 @@
 package com.example.dsmevento.ui.screens
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -18,13 +36,15 @@ fun CreateEditEventScreen(
     onSaved: () -> Unit
 ) {
     val eventViewModel: EventViewModel = viewModel()
-    val selectedEvent by eventViewModel.selectedEvent
+    val selectedEvent = eventViewModel.selectedEvent
+    val loading = eventViewModel.loading
+    val remoteError = eventViewModel.errorMessage
 
     var name by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var dateText by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<String?>(null) }
+    var localError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(eventId) {
         if (eventId != "new") {
@@ -32,11 +52,11 @@ fun CreateEditEventScreen(
         }
     }
 
-    LaunchedEffect(selectedEvent) {
-        selectedEvent?.let {
-            name = it.name
-            location = it.location
-            description = it.description
+    LaunchedEffect(selectedEvent?.uid) {
+        selectedEvent?.let { event ->
+            name = event.name
+            location = event.location
+            description = event.description
             dateText = ""
         }
     }
@@ -52,13 +72,15 @@ fun CreateEditEventScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Top
         ) {
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Nombre del evento") }
+                label = { Text("Nombre del evento") },
+                singleLine = true
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -67,7 +89,8 @@ fun CreateEditEventScreen(
                 value = location,
                 onValueChange = { location = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Ubicación") }
+                label = { Text("Ubicación") },
+                singleLine = true
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -86,12 +109,16 @@ fun CreateEditEventScreen(
                 value = dateText,
                 onValueChange = { dateText = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Fecha y hora (yyyy-MM-dd HH:mm)") }
+                label = { Text("Fecha y hora (yyyy-MM-dd HH:mm)") },
+                singleLine = true
             )
 
-            if (error != null) {
+            if (localError != null || remoteError != null) {
                 Spacer(modifier = Modifier.height(10.dp))
-                Text(text = error.orEmpty(), color = MaterialTheme.colorScheme.error)
+                Text(
+                    text = localError ?: remoteError.orEmpty(),
+                    color = MaterialTheme.colorScheme.error
+                )
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -100,7 +127,7 @@ fun CreateEditEventScreen(
                 onClick = {
                     val millis = parseDateTimeToMillis(dateText)
                     if (millis == null) {
-                        error = "La fecha no tiene el formato correcto."
+                        localError = "La fecha no tiene el formato correcto."
                         return@Button
                     }
 
@@ -111,14 +138,16 @@ fun CreateEditEventScreen(
                         description = description,
                         location = location,
                         name = name,
-                        attendees = selectedEvent?.attendees ?: emptyList()
+                        attendees = selectedEvent?.attendees ?: emptyList(),
+                        finished = selectedEvent?.finished ?: false
                     )
 
                     eventViewModel.saveEvent(event) {
                         onSaved()
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !loading
             ) {
                 Text("Guardar")
             }

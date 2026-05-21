@@ -2,15 +2,18 @@ package com.example.dsmevento.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavType
-import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.dsmevento.ui.screens.*
+import com.example.dsmevento.ui.screens.CreateEditEventScreen
+import com.example.dsmevento.ui.screens.EventDetailScreen
+import com.example.dsmevento.ui.screens.HistoryScreen
 import com.example.dsmevento.ui.screens.HomeScreen
 import com.example.dsmevento.ui.screens.LoginScreen
 import com.example.dsmevento.ui.screens.RegisterScreen
+import com.example.dsmevento.ui.screens.ReviewsScreen
 import com.example.dsmevento.util.Routes
 
 @Composable
@@ -47,6 +50,7 @@ fun AppNavHost() {
             HomeScreen(
                 onCreateEvent = { navController.navigate(Routes.createEditEventRoute()) },
                 onOpenEvent = { eventId -> navController.navigate(Routes.eventDetailRoute(eventId)) },
+                onEditEvent = { eventId -> navController.navigate(Routes.createEditEventRoute(eventId)) },
                 onOpenHistory = { navController.navigate(Routes.HISTORY) },
                 onLogout = {
                     navController.navigate(Routes.LOGIN) {
@@ -76,8 +80,8 @@ fun AppNavHost() {
             EventDetailScreen(
                 eventId = eventId,
                 onBack = { navController.popBackStack() },
-                onEdit = { navController.navigate(Routes.createEditEventRoute(eventId)) },
-                onOpenReviews = { navController.navigate(Routes.reviewsRoute(eventId)) }
+                onEdit = { id -> navController.navigate(Routes.createEditEventRoute(id)) },
+                onOpenReviews = { id -> navController.navigate(Routes.reviewsRoute(id)) }
             )
         }
 

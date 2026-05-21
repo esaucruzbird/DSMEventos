@@ -1,8 +1,25 @@
 package com.example.dsmevento.ui.screens
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -22,9 +39,9 @@ fun ReviewsScreen(
     val eventViewModel: EventViewModel = viewModel()
     val reviewViewModel: ReviewViewModel = viewModel()
 
-    val currentUser by authViewModel.currentUser
-    val selectedEvent by eventViewModel.selectedEvent
-    val reviews by reviewViewModel.reviews
+    val currentUser = authViewModel.currentUser
+    val selectedEvent = eventViewModel.selectedEvent
+    val reviews = reviewViewModel.reviews
 
     var ratingText by remember { mutableStateOf("5") }
     var comment by remember { mutableStateOf("") }
@@ -36,7 +53,9 @@ fun ReviewsScreen(
     }
 
     val isPast = selectedEvent?.date?.let { it < System.currentTimeMillis() } ?: false
-    val isAttendee = currentUser?.uid != null && selectedEvent?.attendees?.contains(currentUser?.uid) == true
+    val isAttendee = currentUser?.uid?.let { uid ->
+        selectedEvent?.attendees?.contains(uid) == true
+    } ?: false
     val canReview = isPast && isAttendee
 
     Scaffold(
@@ -54,8 +73,9 @@ fun ReviewsScreen(
                 OutlinedTextField(
                     value = ratingText,
                     onValueChange = { ratingText = it },
+                    modifier = Modifier.fillMaxWidth(),
                     label = { Text("Calificación 1-5") },
-                    modifier = Modifier.fillMaxWidth()
+                    singleLine = true
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -63,8 +83,8 @@ fun ReviewsScreen(
                 OutlinedTextField(
                     value = comment,
                     onValueChange = { comment = it },
-                    label = { Text("Comentario") },
                     modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Comentario") },
                     minLines = 3
                 )
 
@@ -77,12 +97,13 @@ fun ReviewsScreen(
                             uid = currentUser?.uid.orEmpty(),
                             comment = comment,
                             createdAt = System.currentTimeMillis(),
-                            name = currentUser?.displayName?.ifBlank { currentUser?.email.orEmpty() }
-                                ?: "Usuario",
+                            name = currentUser?.displayName
+                                ?.takeIf { it.isNotBlank() }
+                                ?: currentUser?.email.orEmpty(),
                             rating = rating
                         )
 
-                        reviewViewModel.addReview(eventId, review) {
+                        reviewViewModel.addOrUpdateReview(eventId, review) {
                             comment = ""
                             ratingText = "5"
                         }

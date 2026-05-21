@@ -3,12 +3,13 @@ package com.example.dsmevento.data.remote.firebase
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.SetOptions
 import com.example.dsmevento.data.model.Event
 import com.example.dsmevento.data.model.Review
 
 class FirestoreDataSource {
 
-    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val db = FirebaseFirestore.getInstance()
 
     fun listenEvents(onChange: (List<Event>) -> Unit): ListenerRegistration {
         return db.collection("events")
@@ -21,11 +22,9 @@ class FirestoreDataSource {
             }
     }
 
-    fun getEvent(
-        eventId: String,
-        onResult: (Event?) -> Unit
-    ) {
-        db.collection("events").document(eventId).get()
+    fun getEvent(eventId: String, onResult: (Event?) -> Unit) {
+        db.collection("events").document(eventId)
+            .get()
             .addOnSuccessListener { doc ->
                 onResult(doc.toObject(Event::class.java)?.copy(uid = doc.id))
             }
@@ -39,13 +38,18 @@ class FirestoreDataSource {
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
-        val ref = if (event.uid.isBlank()) db.collection("events").document() else db.collection("events").document(event.uid)
+        val ref = if (event.uid.isBlank()) {
+            db.collection("events").document()
+        } else {
+            db.collection("events").document(event.uid)
+        }
+
         val eventToSave = event.copy(
             uid = ref.id,
             createdAt = if (event.createdAt == 0L) System.currentTimeMillis() else event.createdAt
         )
 
-        ref.set(eventToSave)
+        ref.set(eventToSave, SetOptions.merge())
             .addOnSuccessListener { onSuccess() }
             .addOnFailureListener { e ->
                 onError(e.message ?: "No se pudo guardar el evento.")
@@ -57,7 +61,8 @@ class FirestoreDataSource {
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
-        db.collection("events").document(eventId).delete()
+        db.collection("events").document(eventId)
+            .delete()
             .addOnSuccessListener { onSuccess() }
             .addOnFailureListener { e ->
                 onError(e.message ?: "No se pudo eliminar el evento.")
@@ -96,10 +101,17 @@ class FirestoreDataSource {
         userId: String,
         onChange: (List<Event>) -> Unit
     ): ListenerRegistration {
-        return listenEvents { events ->
-            val now = System.currentTimeMillis()
-            onChange(events.filter { it.date < now && it.attendees.contains(userId) })
-        }
+        return db.collection("events")
+            .addSnapshotListener { snapshot, _ ->
+                val now = System.currentTimeMillis()
+                val history = snapshot?.documents.orEmpty().mapNotNull { doc ->
+                    doc.toObject(Event::class.java)?.copy(uid = doc.id)
+                }.filter { event ->
+                    event.date < now && event.attendees.contains(userId)
+                }.sortedByDescending { it.date }
+
+                onChange(history)
+            }
     }
 
     fun listenReviews(
@@ -111,32 +123,56 @@ class FirestoreDataSource {
             .collection("reviews")
             .addSnapshotListener { snapshot, _ ->
                 val reviews = snapshot?.documents.orEmpty().mapNotNull { doc ->
-                    doc.toObject(Review::class.java)?.copy(uid = doc.getString("uid") ?: "")
+                    doc.toObject(Review::class.java)?.copy(uid = doc.id)
                 }.sortedByDescending { it.createdAt }
 
                 onChange(reviews)
             }
     }
 
-    fun addReview(
+    fun addOrUpdateReview(
         eventId: String,
         review: Review,
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
+        val userId = review.uid.trim()
+        if (userId.isBlank()) {
+            onError("No se pudo identificar al usuario.")
+            return
+        }
+
         val ref = db.collection("events")
             .document(eventId)
             .collection("reviews")
-            .document()
+            .document(userId)
 
         val reviewToSave = review.copy(
+            uid = userId,
             createdAt = if (review.createdAt == 0L) System.currentTimeMillis() else review.createdAt
         )
 
-        ref.set(reviewToSave)
+        ref.set(reviewToSave, SetOptions.merge())
             .addOnSuccessListener { onSuccess() }
             .addOnFailureListener { e ->
                 onError(e.message ?: "No se pudo guardar la reseña.")
+            }
+    }
+
+    fun deleteReview(
+        eventId: String,
+        userId: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        db.collection("events")
+            .document(eventId)
+            .collection("reviews")
+            .document(userId)
+            .delete()
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { e ->
+                onError(e.message ?: "No se pudo eliminar la reseña.")
             }
     }
 }

@@ -2,6 +2,7 @@ package com.example.dsmevento.ui.components
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 
@@ -24,7 +25,7 @@ fun ConfirmDialog(
             }
         },
         dismissButton = {
-            Button(onClick = onDismiss) {
+            OutlinedButton(onClick = onDismiss) {
                 Text(dismissText)
             }
         }

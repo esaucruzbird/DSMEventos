@@ -1,8 +1,20 @@
 package com.example.dsmevento.ui.screens
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -19,15 +31,17 @@ fun HistoryScreen(
     val authViewModel: AuthViewModel = viewModel()
     val eventViewModel: EventViewModel = viewModel()
 
-    val currentUser by authViewModel.currentUser
-    val history by eventViewModel.history
+    val currentUser = authViewModel.currentUser
+    val history = eventViewModel.history
 
     LaunchedEffect(Unit) {
         authViewModel.loadCurrentUser()
     }
 
     LaunchedEffect(currentUser?.uid) {
-        currentUser?.uid?.let { eventViewModel.startHistoryListener(it) }
+        currentUser?.uid?.let { uid ->
+            eventViewModel.startHistoryListener(uid)
+        }
     }
 
     Scaffold(
@@ -48,7 +62,11 @@ fun HistoryScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text(event.name, style = MaterialTheme.typography.titleLarge)
+                            Text(
+                                text = event.name,
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text("Fecha: ${formatMillisToDateTime(event.date)}")
                             Text("Lugar: ${event.location}")
                         }

@@ -30,7 +30,7 @@ class ReviewViewModel : ViewModel() {
         }
     }
 
-    fun addReview(
+    fun addOrUpdateReview(
         eventId: String,
         review: Review,
         onSuccess: () -> Unit
@@ -38,9 +38,31 @@ class ReviewViewModel : ViewModel() {
         loading = true
         errorMessage = null
 
-        repository.addReview(
+        repository.addOrUpdateReview(
             eventId = eventId,
             review = review,
+            onSuccess = {
+                loading = false
+                onSuccess()
+            },
+            onError = {
+                loading = false
+                errorMessage = it
+            }
+        )
+    }
+
+    fun deleteReview(
+        eventId: String,
+        userId: String,
+        onSuccess: () -> Unit
+    ) {
+        loading = true
+        errorMessage = null
+
+        repository.deleteReview(
+            eventId = eventId,
+            userId = userId,
             onSuccess = {
                 loading = false
                 onSuccess()
