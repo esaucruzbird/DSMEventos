@@ -4,6 +4,9 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.DocumentSnapshot
+import java.util.Date
 import com.example.dsmevento.data.model.Event
 import com.example.dsmevento.data.model.Review
 
@@ -15,7 +18,7 @@ class FirestoreDataSource {
         return db.collection("events")
             .addSnapshotListener { snapshot, _ ->
                 val events = snapshot?.documents.orEmpty().mapNotNull { doc ->
-                    doc.toObject(Event::class.java)?.copy(uid = doc.id)
+                    doc.toEventSafely()
                 }.sortedBy { it.date }
 
                 onChange(events)
@@ -26,7 +29,7 @@ class FirestoreDataSource {
         db.collection("events").document(eventId)
             .get()
             .addOnSuccessListener { doc ->
-                onResult(doc.toObject(Event::class.java)?.copy(uid = doc.id))
+                onResult(doc.toEventSafely())
             }
             .addOnFailureListener {
                 onResult(null)
@@ -105,7 +108,7 @@ class FirestoreDataSource {
             .addSnapshotListener { snapshot, _ ->
                 val now = System.currentTimeMillis()
                 val history = snapshot?.documents.orEmpty().mapNotNull { doc ->
-                    doc.toObject(Event::class.java)?.copy(uid = doc.id)
+                    doc.toEventSafely()
                 }.filter { event ->
                     event.date < now && event.attendees.contains(userId)
                 }.sortedByDescending { it.date }
@@ -123,7 +126,7 @@ class FirestoreDataSource {
             .collection("reviews")
             .addSnapshotListener { snapshot, _ ->
                 val reviews = snapshot?.documents.orEmpty().mapNotNull { doc ->
-                    doc.toObject(Review::class.java)?.copy(uid = doc.id)
+                    doc.toReviewSafely()
                 }.sortedByDescending { it.createdAt }
 
                 onChange(reviews)
@@ -174,5 +177,45 @@ class FirestoreDataSource {
             .addOnFailureListener { e ->
                 onError(e.message ?: "No se pudo eliminar la reseña.")
             }
+    }
+
+    private fun DocumentSnapshot.toEventSafely(): Event? {
+        val data = data ?: return null
+
+        return Event(
+            uid = id,
+            createdAt = data["createdAt"].asMillis(),
+            date = data["date"].asMillis(),
+            description = data["description"] as? String ?: "",
+            location = data["location"] as? String ?: "",
+            name = data["name"] as? String ?: "",
+            attendees = (data["attendees"] as? List<*>)?.mapNotNull { it as? String } ?: emptyList(),
+            finished = data["finished"] as? Boolean ?: false
+        )
+    }
+
+    private fun DocumentSnapshot.toReviewSafely(): Review? {
+        val data = data ?: return null
+
+        return Review(
+            uid = data["uid"] as? String ?: id,
+            comment = data["comment"] as? String ?: "",
+            createdAt = data["createdAt"].asMillis(),
+            name = data["name"] as? String ?: "",
+            rating = (data["rating"] as? Number)?.toInt() ?: 0
+        )
+    }
+
+    private fun Any?.asMillis(): Long {
+        return when (this) {
+            is Long -> this
+            is Int -> this.toLong()
+            is Double -> this.toLong()
+            is Float -> this.toLong()
+            is Number -> this.toLong()
+            is Timestamp -> this.toDate().time
+            is Date -> this.time
+            else -> 0L
+        }
     }
 }
