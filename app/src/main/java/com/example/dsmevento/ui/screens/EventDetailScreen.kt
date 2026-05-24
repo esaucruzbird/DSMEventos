@@ -9,11 +9,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -22,6 +26,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -32,6 +37,7 @@ import com.example.dsmevento.ui.components.ConfirmDialog
 import com.example.dsmevento.util.formatMillisToDateTime
 import com.example.dsmevento.viewmodel.AuthViewModel
 import com.example.dsmevento.viewmodel.EventViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,9 +50,14 @@ fun EventDetailScreen(
     val authViewModel: AuthViewModel = viewModel()
     val eventViewModel: EventViewModel = viewModel()
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     val currentUser = authViewModel.currentUser
     val currentEvent = eventViewModel.selectedEvent
+    val loading = eventViewModel.loading
+    val remoteError = eventViewModel.errorMessage
+
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(eventId) {
@@ -54,23 +65,12 @@ fun EventDetailScreen(
         eventViewModel.loadEventById(eventId)
     }
 
-    if (showDeleteDialog) {
-        ConfirmDialog(
-            title = "Eliminar evento",
-            message = "¿Seguro que deseas eliminar este evento?",
-            confirmText = "Eliminar",
-            onConfirm = {
-                eventViewModel.deleteEvent(eventId)
-                showDeleteDialog = false
-                onBack()
-            },
-            onDismiss = { showDeleteDialog = false }
-        )
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Detalle del evento") })
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
         }
     ) { padding ->
         if (currentEvent == null) {
@@ -89,14 +89,28 @@ fun EventDetailScreen(
         val isAttendee = currentUser?.uid?.let { uid ->
             currentEvent.attendees.contains(uid)
         } ?: false
-
         val canReview = isPast && isAttendee
+
+        if (showDeleteDialog) {
+            ConfirmDialog(
+                title = "Eliminar evento",
+                message = "¿Seguro que deseas eliminar este evento?",
+                confirmText = "Eliminar",
+                onConfirm = {
+                    eventViewModel.deleteEvent(eventId)
+                    showDeleteDialog = false
+                    onBack()
+                },
+                onDismiss = { showDeleteDialog = false }
+            )
+        }
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .padding(16.dp)
+                .verticalScroll(rememberScrollState())
         ) {
             Text(
                 text = currentEvent.name,
@@ -108,30 +122,44 @@ fun EventDetailScreen(
             Spacer(modifier = Modifier.height(12.dp))
             Text(currentEvent.description)
 
+            if (remoteError != null) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(text = remoteError, color = MaterialTheme.colorScheme.error)
+            }
+
             Spacer(modifier = Modifier.height(20.dp))
 
             if (!isPast) {
-                if (isAttendee) {
-                    Button(
-                        onClick = {
-                            currentUser?.uid?.let { uid ->
-                                eventViewModel.cancelAttendance(eventId, uid)
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Cancelar asistencia")
-                    }
-                } else {
-                    Button(
-                        onClick = {
-                            currentUser?.uid?.let { uid ->
-                                eventViewModel.confirmAttendance(eventId, uid)
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Confirmar asistencia")
+                val user = currentUser
+                if (user != null) {
+                    if (isAttendee) {
+                        Button(
+                            onClick = {
+                                eventViewModel.cancelAttendance(eventId, user.uid) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Ya no eres asistente del evento.")
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !loading
+                        ) {
+                            Text("Cancelar asistencia")
+                        }
+                    } else {
+                        Button(
+                            onClick = {
+                                eventViewModel.confirmAttendance(eventId, user.uid) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Ya eres asistente del evento.")
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !loading
+                        ) {
+                            Text("Confirmar asistencia")
+                        }
                     }
                 }
             } else {

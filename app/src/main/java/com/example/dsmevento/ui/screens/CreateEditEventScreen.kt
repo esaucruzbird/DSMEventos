@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -25,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.dsmevento.data.model.Event
+import com.example.dsmevento.util.formatMillisToInputDateTime
 import com.example.dsmevento.util.parseDateTimeToMillis
 import com.example.dsmevento.viewmodel.EventViewModel
 
@@ -47,7 +50,14 @@ fun CreateEditEventScreen(
     var localError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(eventId) {
-        if (eventId != "new") {
+        localError = null
+        if (eventId == "new") {
+            eventViewModel.clearSelectedEvent()
+            name = ""
+            location = ""
+            description = ""
+            dateText = ""
+        } else {
             eventViewModel.loadEventById(eventId)
         }
     }
@@ -57,7 +67,7 @@ fun CreateEditEventScreen(
             name = event.name
             location = event.location
             description = event.description
-            dateText = ""
+            dateText = formatMillisToInputDateTime(event.date)
         }
     }
 
@@ -72,7 +82,8 @@ fun CreateEditEventScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.Top
         ) {
             OutlinedTextField(
@@ -125,8 +136,10 @@ fun CreateEditEventScreen(
 
             Button(
                 onClick = {
-                    val millis = parseDateTimeToMillis(dateText)
-                    if (millis == null) {
+                    val millisFromText = parseDateTimeToMillis(dateText)
+                    val finalMillis = millisFromText ?: selectedEvent?.date
+
+                    if (finalMillis == null) {
                         localError = "La fecha no tiene el formato correcto."
                         return@Button
                     }
@@ -134,7 +147,7 @@ fun CreateEditEventScreen(
                     val event = Event(
                         uid = if (eventId == "new") "" else eventId,
                         createdAt = selectedEvent?.createdAt ?: System.currentTimeMillis(),
-                        date = millis,
+                        date = finalMillis,
                         description = description,
                         location = location,
                         name = name,

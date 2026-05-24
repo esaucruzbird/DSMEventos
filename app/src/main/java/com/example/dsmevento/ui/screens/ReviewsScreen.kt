@@ -1,14 +1,17 @@
 package com.example.dsmevento.ui.screens
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -63,75 +66,82 @@ fun ReviewsScreen(
             TopAppBar(title = { Text("Reseñas") })
         }
     ) { padding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
+                .padding(16.dp),
+            contentPadding = PaddingValues(bottom = 96.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            if (canReview) {
-                OutlinedTextField(
-                    value = ratingText,
-                    onValueChange = { ratingText = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Calificación 1-5") },
-                    singleLine = true
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = comment,
-                    onValueChange = { comment = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Comentario") },
-                    minLines = 3
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Button(
-                    onClick = {
-                        val rating = ratingText.toIntOrNull() ?: 0
-                        val review = Review(
-                            uid = currentUser?.uid.orEmpty(),
-                            comment = comment,
-                            createdAt = System.currentTimeMillis(),
-                            name = currentUser?.displayName
-                                ?.takeIf { it.isNotBlank() }
-                                ?: currentUser?.email.orEmpty(),
-                            rating = rating
+            item {
+                if (canReview) {
+                    Column {
+                        OutlinedTextField(
+                            value = ratingText,
+                            onValueChange = { ratingText = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text("Calificación 1-5") },
+                            singleLine = true
                         )
 
-                        reviewViewModel.addOrUpdateReview(eventId, review) {
-                            comment = ""
-                            ratingText = "5"
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Publicar reseña")
-                }
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                Spacer(modifier = Modifier.height(20.dp))
-            } else {
-                Text("Solo los asistentes de un evento finalizado pueden agregar reseñas.")
-                Spacer(modifier = Modifier.height(20.dp))
+                        OutlinedTextField(
+                            value = comment,
+                            onValueChange = { comment = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text("Comentario") },
+                            minLines = 3
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Button(
+                            onClick = {
+                                val user = currentUser ?: return@Button
+                                val rating = ratingText.toIntOrNull() ?: 0
+
+                                val review = Review(
+                                    uid = user.uid,
+                                    comment = comment,
+                                    createdAt = System.currentTimeMillis(),
+                                    name = user.displayName.takeIf { it.isNotBlank() }
+                                        ?: user.email,
+                                    rating = rating
+                                )
+
+                                reviewViewModel.addOrUpdateReview(eventId, review) {
+                                    comment = ""
+                                    ratingText = "5"
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Publicar reseña")
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                } else {
+                    Text("Solo los asistentes de un evento finalizado pueden agregar reseñas.")
+                }
             }
 
             if (reviews.isEmpty()) {
-                Text("Todavía no hay reseñas.")
+                item {
+                    Text("Todavía no hay reseñas.")
+                }
             } else {
-                reviews.forEach { review ->
-                    Spacer(modifier = Modifier.height(8.dp))
+                items(reviews, key = { it.uid }) { review ->
                     ReviewItem(review = review)
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TextButton(onClick = onBack) {
-                Text("Volver")
+            item {
+                TextButton(onClick = onBack) {
+                    Text("Volver")
+                }
             }
         }
     }

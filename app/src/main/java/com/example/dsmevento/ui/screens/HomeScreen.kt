@@ -2,19 +2,19 @@ package com.example.dsmevento.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -26,6 +26,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.dsmevento.ui.components.EventCard
+import com.example.dsmevento.ui.theme.EventAttendingOrange
+import com.example.dsmevento.ui.theme.EventPastGray
+import com.example.dsmevento.ui.theme.EventUpcomingGreen
 import com.example.dsmevento.viewmodel.AuthViewModel
 import com.example.dsmevento.viewmodel.EventViewModel
 
@@ -74,34 +77,50 @@ fun HomeScreen(
             }
         }
     ) { padding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .padding(16.dp),
-            verticalArrangement = Arrangement.Top
+            contentPadding = PaddingValues(bottom = 96.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             if (events.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Default.Event,
-                            contentDescription = null
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text("No hay eventos registrados todavía.")
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = 120.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        androidx.compose.foundation.layout.Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Default.Event,
+                                contentDescription = null
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text("No hay eventos registrados todavía.")
+                        }
                     }
                 }
             } else {
-                events.forEach { event ->
-                    Spacer(modifier = Modifier.height(8.dp))
+                items(events, key = { it.uid }) { event ->
+                    val isPast = event.date < System.currentTimeMillis()
+                    val isAttending = currentUser?.uid?.let { uid ->
+                        event.attendees.contains(uid)
+                    } ?: false
+
+                    val cardColor = when {
+                        isPast -> EventPastGray
+                        isAttending -> EventAttendingOrange
+                        else -> EventUpcomingGreen
+                    }
+
                     EventCard(
                         event = event,
-                        isPastEvent = event.date < System.currentTimeMillis(),
+                        isPastEvent = isPast,
                         canEditDelete = currentUser?.role == "organizer" || currentUser?.role == "admin",
+                        containerColor = cardColor,
                         onClick = { onOpenEvent(event.uid) },
                         onEdit = { onEditEvent(event.uid) },
                         onDelete = { eventViewModel.deleteEvent(event.uid) }

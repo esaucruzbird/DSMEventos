@@ -86,7 +86,11 @@ class EventViewModel : ViewModel() {
         )
     }
 
-    fun confirmAttendance(eventId: String, uid: String) {
+    fun confirmAttendance(
+        eventId: String,
+        uid: String,
+        onSuccess: (() -> Unit)? = null
+    ) {
         loading = true
         errorMessage = null
 
@@ -95,6 +99,8 @@ class EventViewModel : ViewModel() {
             uid = uid,
             onSuccess = {
                 loading = false
+                updateSelectedEventAttendance(eventId, uid, add = true)
+                onSuccess?.invoke()
             },
             onError = {
                 loading = false
@@ -103,7 +109,11 @@ class EventViewModel : ViewModel() {
         )
     }
 
-    fun cancelAttendance(eventId: String, uid: String) {
+    fun cancelAttendance(
+        eventId: String,
+        uid: String,
+        onSuccess: (() -> Unit)? = null
+    ) {
         loading = true
         errorMessage = null
 
@@ -112,6 +122,8 @@ class EventViewModel : ViewModel() {
             uid = uid,
             onSuccess = {
                 loading = false
+                updateSelectedEventAttendance(eventId, uid, add = false)
+                onSuccess?.invoke()
             },
             onError = {
                 loading = false
@@ -122,6 +134,18 @@ class EventViewModel : ViewModel() {
 
     fun clearSelectedEvent() {
         selectedEvent = null
+    }
+
+    private fun updateSelectedEventAttendance(eventId: String, uid: String, add: Boolean) {
+        val current = selectedEvent ?: return
+        if (current.uid != eventId) return
+
+        selectedEvent = if (add) {
+            if (uid in current.attendees) current
+            else current.copy(attendees = current.attendees + uid)
+        } else {
+            current.copy(attendees = current.attendees.filterNot { it == uid })
+        }
     }
 
     override fun onCleared() {

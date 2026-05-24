@@ -4,15 +4,23 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+private const val DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm"
+
+private fun createDateTimeFormatter(): SimpleDateFormat {
+    return SimpleDateFormat(DATE_TIME_PATTERN, Locale.US)
+}
 
 fun formatMillisToDateTime(millis: Long): String {
-    return if (millis <= 0L) "-" else formatter.format(Date(millis))
+    return if (millis <= 0L) "-" else createDateTimeFormatter().format(Date(millis))
+}
+
+fun formatMillisToInputDateTime(millis: Long): String {
+    return if (millis <= 0L) "" else createDateTimeFormatter().format(Date(millis))
 }
 
 fun parseDateTimeToMillis(text: String): Long? {
     return try {
-        formatter.parse(text)?.time
+        createDateTimeFormatter().parse(text)?.time
     } catch (_: Exception) {
         null
     }

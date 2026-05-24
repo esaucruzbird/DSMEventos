@@ -16,3 +16,7 @@ val Background = Color(0xFFF8F9FA)
 val Surface = Color(0xFFFFFFFF)
 val TextPrimary = Color(0xFF1F1F1F)
 val TextSecondary = Color(0xFF6B7280)
+
+val EventPastGray = Color(0xFFE0E0E0)
+val EventUpcomingGreen = Color(0xFFC8E6C9)
+val EventAttendingOrange = Color(0xFFFFE0B2)
