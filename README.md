@@ -73,7 +73,7 @@ Para ver los resultados:
 Para obtener más información sobre cómo desarrollar un proyecto con Kotlin, consulte los siguientes recursos:
 
 - [Documentación de Android Studio](https://developer.android.com/studio/intro)
-- Para aprender los conceptos básicos o profundizar en temas avanzados con la información [guías](https://developer.android.com/samples)
+- Para aprender los conceptos básicos o profundizar en temas avanzados con la información [(Guías)](https://developer.android.com/samples)
 
 ## Licenciamiento
 
