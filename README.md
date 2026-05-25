@@ -43,8 +43,8 @@ En el archivo app/build.gradle.kts (:app) llamar los plugins y colocar las depen
     }
    ```
 
-2. Pasos para la instalación
-   Instalar Android Studio
+2. Pasos para la instalación:  
+   Instalar Android Studio  
    Abrir emulador de Android Studio, se recomienda el modelo Google Pixel 7 por eficiencia, fluidez y launcher más limpio para no sobrecargar los recursos de la PC
    
 4. Para obtener las huellas digitales SHA-1 y SHA-256 porque se deben incluir en FireBase Console antes de descargar el archivo google-services.json se usa el siguiente comando para detener el daemon actual y con el segundo se genera uno nuevo que devuelve los valores SHA
