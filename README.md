@@ -64,6 +64,6 @@ El interesado es libre de: compartir, copiar y redistribuir el material en cualq
 
 ## Documentación solicitada
 - [Reporte escrito](https://drive.google.com/file/d/19J8DfCqn4xJNx4Wp5gvPs3gct1cANXNd/view?usp=sharing)
-- [Mock Ups](https://drive.google.com/file/d/1bIO3pJtZCS-glM0VXdcPudJ6piNKyXT3/view?usp=sharing)
+- [Mock Ups](https://drive.google.com/file/d/1way6mP9gVsa0_oX3nRkOIwoOrk38MuPU/view?usp=sharing)
 
 >>>>>>> Para futuras referencias, el commit inicial de este proyecto fue: f0fe3cb
