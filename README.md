@@ -63,8 +63,7 @@ El interesado es libre de: compartir, copiar y redistribuir el material en cualq
    Josué Esaú Cruz Mejía - Estudiante UDB Virtual - CM221973
 
 ## Documentación solicitada
-- [Reporte escrito](https://drive.google.com/file/d/1lg9F3yZJ6aprhilaO6QpxLtSrdkj4M13/view?usp=sharing)
-- [Tablero de Trello](https://trello.com/invite/b/6923f33f42c21dc3dc9791b3/ATTI5f9b2664d54783248e352030a7b9b16eB1EE9EC9/dps-proyecto-2-cm221973)
+- [Reporte escrito](https://drive.google.com/file/d/19J8DfCqn4xJNx4Wp5gvPs3gct1cANXNd/view?usp=sharing)
 - [Mock Ups](https://drive.google.com/file/d/1bIO3pJtZCS-glM0VXdcPudJ6piNKyXT3/view?usp=sharing)
 
->>>>>>> Para futuras referencias, el commit inicial de este proyecto fue: 61bc1c8
+>>>>>>> Para futuras referencias, el commit inicial de este proyecto fue: f0fe3cb
